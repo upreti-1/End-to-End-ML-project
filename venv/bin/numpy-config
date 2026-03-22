@@ -1,4 +1,6 @@
-#!/home/prashant/Desktop/MLprojec/venv/bin/python
+#!/bin/sh
+'''exec' "/home/prashant/Desktop/ML Project/venv/bin/python" "$0" "$@"
+' '''
 import sys
 from numpy._configtool import main
 if __name__ == '__main__':
