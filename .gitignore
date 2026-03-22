@@ -205,3 +205,20 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Data
+*.csv
+*.xlsx
+*.json
+
+# Models
+*.pkl
+*.joblib
+
+# OS files
+.DS_Store
