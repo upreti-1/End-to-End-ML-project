@@ -9,11 +9,11 @@ from sklearn.impute import SimpleImputer  # To handle missing values
 from sklearn.pipeline import Pipeline
 from src.exception import CustomException
 from src.logger import logging
-
+from src.utils import save_objects
 
 @dataclass
 class DataTransformationConfig:
-    preprocessor_obj_file_path = os.path.join('artifact','preprocessor.pkl')
+    preprocessor_obj_file_path = os.path.join('artifacts','preprocessor.pkl')
 
 class DataTransformation:
     def __init__(self):
@@ -27,7 +27,7 @@ class DataTransformation:
 
             num_pipeline = Pipeline(
                 steps= [
-                    ('imputer', SimpleImputer(strategy='medium')),      # handles the missing values
+                    ('imputer', SimpleImputer(strategy='median')),      # handles the missing values
                     ('scaler', StandardScaler())
                 ]
             )
@@ -37,8 +37,7 @@ class DataTransformation:
             cat_pipeline = Pipeline(
                 steps=[
                     ('imputer', SimpleImputer(strategy= 'most_frequent')),      # handles the missing values
-                    ('One_hot_encoder', OneHotEncoder()),
-                    ('scaler', StandardScaler())
+                    ('One_hot_encoder', OneHotEncoder())
                 ]
             )
             logging.info("categorical columns encoding and scaling completed")
@@ -58,23 +57,44 @@ class DataTransformation:
         
     def initiate_data_transformation(self, train_path, test_path):
         try:
-            train_df = pd.read_csv("train_path")
-            test_df = pd.read_csv('test_path')
+            train_df = pd.read_csv(train_path)
+            test_df = pd.read_csv(test_path)
             logging.info("Read Train & Test Data Completed")
+
 
             logging.info("Obtaining preprocessing object")
 
-            preprocessor = self.get_data_transformer_object()
+            preprocessor_obj = self.get_data_transformer_object()
 
             target_column_name = 'math score'
-            numerical_cols = ['reading score', 'writing score']
-            categorical_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
+            #numerical_cols = ['reading score', 'writing score']
+            #categorical_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
 
             input_features_train_df = train_df.drop(target_column_name, axis = 1)
-            input_featuers_test_df = test_df.drop(target_column_name, axis = 1)
+            target_feature_train_df = train_df[target_column_name]
+
+            input_features_test_df = test_df.drop(target_column_name, axis = 1)
+            target_feature_test_df = test_df[target_column_name]
+
 
             logging.info("Applying the preprocessing object on train and test data")
-            
 
-        except:
-            pass
+            input_features_train_array = preprocessor_obj.fit_transform(input_features_train_df)
+            input_features_test_array = preprocessor_obj.transform(input_features_test_df)
+            
+            train_array = np.c_[input_features_train_array, np.array(target_feature_train_df)]
+            test_array = np.c_[input_features_test_array, np.array(target_feature_test_df)]
+
+            logging.info('Saving Preprocessed Objects')
+
+            # calling an funciton form utils.py
+            save_objects(file_path = self.data_transformation_config.preprocessor_obj_file_path, obj = preprocessor_obj)
+
+            return (
+                train_array,
+                test_array,
+                self.data_transformation_config.preprocessor_obj_file_path
+            )
+
+        except Exception as e:
+            raise CustomException(e, sys)
